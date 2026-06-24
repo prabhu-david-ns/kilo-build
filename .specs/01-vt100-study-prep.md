@@ -1,58 +1,82 @@
-# Spec 01 — VT100 Study Prep (Python Scripts)
+# Spec 01 — VT100 Study Prep (Research + Python Scripts)
 
 ## Goal
 
-Create a `prep/` directory in the build repo containing standalone Python scripts that study the VT100 escape sequences and terminal facilities needed to build a terminal text editor. These scripts are exploratory — they help us understand the primitives before writing C code.
+Create a `prep/` directory in the build repo containing standalone Python scripts that research and demonstrate the VT100 escape sequences and terminal facilities needed to build a terminal text editor from scratch. These scripts are exploratory — the implementation is driven entirely by web research, not prior knowledge. Every escape sequence and terminal capability used must include a direct reference to its source.
+
+## Ground Rules
+
+**No prior knowledge about VT100/ANSI escape sequences or terminal editing is baked into this spec.** The implementer MUST research every sequence, capability, and pattern via web search and cite the original documentation. Nothing here is assumed known.
 
 ## Requirements
 
-1. Create `prep/` in the build repo root with an empty `__init__.py` and a `README.md` briefly documenting what each script does.
-2. Write `prep/clear-screen.py` — a script that demonstrates:
-   - Clearing the entire screen (`\x1b[2J`)
-   - Moving cursor to home position (`\x1b[H`)
-   - Clearing from cursor to end of screen (`\x1b[J`)
-   - Each operation pauses briefly (`time.sleep(0.5)`) so the effect is visible
-3. Write `prep/viewport.py` — a script that:
-   - Queries terminal cursor position via `\x1b[6n` and reads the response
-   - Gets terminal window size via `shutil.get_terminal_size()` (Python stdlib)
-   - Prints formatted terminal dimensions (rows × cols)
-   - Attempts the Kilo-style cursor query fallback: moves cursor to bottom-right via `\x1b[999C\x1b[999B`, queries with `\x1b[6n`, restores cursor
-4. Write `prep/cursor-move.py` — a script that demonstrates:
-   - Moving to specific row/col via `\x1b[row;colH`
-   - Relative cursor movement: up (`\x1b[A`), down (`\x1b[B`), forward (`\x1b[C`), back (`\x1b[D`)
-   - Drawing a simple shape (e.g., a box or cross) using cursor positioning + printable characters
-5. Write `prep/colors.py` — a script that displays:
-   - All 8 standard ANSI foreground colors on a dark background
-   - All 8 standard ANSI background colors
-   - A sample of 256-color mode (`\x1b[38;5;Nm`) showing colors 0–255 in a grid
-   - Each color labeled with its numeric code
-6. Write `prep/terminal-info.py` — a single script that prints a summary of the current terminal's capabilities including:
-   - Window size (rows, cols)
-   - Whether stdin is a TTY (`os.isatty(0)`)
-   - Whether stdout is a TTY (`os.isatty(1)`)
-   - TERM environment variable value
-   - Whether `\x1b[6n` cursor position query responds correctly (detected via timeout)
-7. All scripts must handle terminal restoration: save `stty` state before raw mode and restore on exit (use `atexit` or `try/finally`).
+1. Create `prep/` in the build repo root with an empty `__init__.py` and a `README.md` that documents what each script does and lists all researched references.
+
+2. Write `prep/clear-screen.py` — a script that researches and demonstrates terminal screen clearing:
+   - Research: What escape sequences clear the screen? What's the difference between clearing the whole screen vs clearing from cursor to end?
+   - Implement a short demo that shows each clearing method with a visible pause between them
+   - The script's header comment MUST cite the exact source(s) used for each sequence (URL, man page section, or spec document)
+
+3. Write `prep/viewport.py` — a script that researches how to discover the terminal's dimensions and cursor position:
+   - Research: How does the Device Status Report (`DSR`) sequence work? How do you query cursor position and parse the response? What's the fallback pattern for getting terminal size by moving to an extreme position?
+   - Research: What does Python's `shutil.get_terminal_size()` return and how does it work internally?
+   - Implement: Report terminal dimensions and demonstrate cursor position query
+   - Every sequence and parsing technique MUST include a cited reference
+
+4. Write `prep/cursor-move.py` — a script that researches cursor positioning:
+   - Research: What are the absolute positioning (CUP) and relative movement (CUF, CUB, CUU, CUD) escape sequences?
+   - Research: What does the `HVP` sequence do differently from `CUP`?
+   - Implement: Demo absolute positioning by drawing a simple shape (box or cross) using cursor movement + printable characters
+   - Each sequence used MUST have a cited reference in comments
+
+5. Write `prep/colors.py` — a script that researches ANSI color support:
+   - Research: What are the SGR parameters for foreground and background colors? What's the difference between 8-color, 16-color, and 256-color modes? How does the `38;5;N` / `48;5;N` extended color sequence work?
+   - Implement: Display the 8 standard foreground colors, 8 background colors, and a sample grid of 256-color mode (colors 0–255)
+   - Every SGR code used MUST cite the source spec or reference
+
+6. Write `prep/terminal-info.py` — a script that researches how to introspect the terminal:
+   - Research: What does `os.isatty()` tell you? How can you test whether the terminal responds to escape sequence queries (e.g., with a timeout)?
+   - Research: What does the `TERM` environment variable indicate and what are common values?
+   - Implement: Print terminal details — window size, TTY status, TERM value, and a test of escape sequence response detection
+   - All research findings MUST include cited references in comments
+
+7. All scripts must handle terminal state management. Research what `stty` raw mode does to the terminal, what state needs to be saved/restored, and implement proper cleanup on exit (use `atexit` or `try/finally`).
+
 8. All scripts must include a `if __name__ == '__main__': main()` entry point.
+
+## Reference Format
+
+In every script, each escape sequence, function, or technique MUST have an inline comment like:
+
+```python
+# Reference: https://vt100.net/docs/vt100-ug/chapter3.html#CUP
+# Sequence: ESC [ row ; col H — Cursor Position (CUP)
+```
+
+A consolidated reference list at the top of each file or in the script's docstring is also acceptable. The `prep/README.md` must include a full bibliography section.
 
 ## Acceptance Criteria
 
-- Running `python3 prep/clear-screen.py` clears the screen, moves cursor home, and pauses between each operation.
-- Running `python3 prep/viewport.py` prints terminal dimensions and successfully queries cursor position via escape sequence.
-- Running `python3 prep/cursor-move.py` draws a visible shape on screen using cursor positioning.
-- Running `python3 prep/colors.py` displays a labeled color grid without flickering.
-- Running `python3 prep/terminal-info.py` prints terminal details without crashing.
-- All scripts exit cleanly with terminal restored to its original state.
+- Every script compiles and runs with Python 3 stdlib only (no pip packages)
+- Every script includes cited references for all escape sequences used
+- `clear-screen.py` visibly demonstrates at least two different clearing sequences with pause between them
+- `viewport.py` prints terminal dimensions and demonstrates cursor position query successfully
+- `cursor-move.py` draws a visible shape on screen using absolute cursor positioning
+- `colors.py` displays a labeled color grid without flickering
+- `terminal-info.py` prints terminal details and escape-sequence response test result without crashing
+- All scripts exit cleanly with terminal restored to its original state
 
 ## Context Limits
 
 The implementer MUST NOT:
-- See the original `source/` repo (antirez/kilo)
+- See the original `source/` repo
 - See other specs beyond this one
 - See `explore/CONTENT_ANGLES.md`
+- Use any third-party Python packages
+- Assume any escape sequence or terminal behavior is known without researching it
 
-The implementer MAY:
-- Use Python stdlib only (no third-party packages)
-- Use POSIX `stty` command as reference
-- Reference VT100/ANSI escape sequence documentation (man page, Wikipedia, etc.)
-- Create new scripts in `prep/` as needed beyond the listed ones
+The implementer MUST:
+- Use web search to research every VT100/ANSI escape sequence before using it
+- Cite the source URL, man page section, or spec document for every sequence and technique
+- Include a bibliography in `prep/README.md`
+- Create additional research scripts in `prep/` if something interesting comes up during research
