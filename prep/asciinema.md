@@ -37,27 +37,22 @@ every frame of a `.gif` into a numbered PNG folder.
     agg --version
     which asciinema agg python3
 
-### Recording (asciinema)
+### Recording (tmux — the ONLY method, user mandate)
 
-    asciinema rec --headless --window-size 80x24 --return -q \
-      -c "python3 -u clear-screen-demo1.py" --overwrite \
-      ASCIINEMA/clear-screen-demo1.cast
+**All recordings use `record-tmux-shell.sh`** (from the skill's scripts dir) —
+NEVER `asciinema rec -c "python3 ..."`. The tmux script types the commands
+into a live interactive shell, so the prompt, typed commands, and output are
+all captured. Prabhu (2026-08): *"all new asciinema should be tmux recordings
+and not the python script based ones we started out with."*
 
-Key flags:
-- `--headless` — runs the child in a NullTty; no interference with the
-  current terminal. Auto-enabled when no TTY is available (CI, piped shells).
-- `--window-size 80x24` — sets the PTY size. Use the same size for every
-  demo in the same batch for consistent frames.
-- `--return` — propagate the child's exit code (non-zero = cast is invalid).
-- `-q` — suppress asciinema's own "session started / Press ctrl+d" banner
-  so the cast is clean.
-- `-c "python3 -u clear-screen-demo1.py"` — the command to record.
-  `python3 -u` (unbuffered) ensures output is captured in real time.
-- `--overwrite` — allows re-recording without prompting.
+    ~/CONTENT_TOP/Democrt_AI_SE/skills/asciinema-record/scripts/record-tmux-shell.sh \
+      ASCIINEMA/clear-screen-demo1-cmds.txt ASCIINEMA/clear-screen-demo1.cast 80 24 45
 
-Full help:
-
-    asciinema rec --help
+The commands file runs the demo as a command line (e.g. `python3 -u clear-screen-demo1.py`),
+followed by a pause so the final state holds. Commands-file format: one command or
+keystroke per line; `#` comments and blank lines ignored; `Enter` is appended to
+multi-character command lines automatically. See the skill's SKILL.md for the full
+keystroke reference (`C-x`, `Up`, `Down`, `F1`–`F12`, ...).
 
 ### Rendering (agg)
 
@@ -150,9 +145,9 @@ Or with Python (decode every event):
     for n in 1 2 3 4; do
       rm -f "ASCIINEMA/clear-screen-demo$n.cast" "ASCIINEMA/clear-screen-demo$n.gif"
       rm -rf "ASCIINEMA/clear-screen-demo${n}-frames"
-      asciinema rec --headless --window-size 80x24 --return -q \
-        -c "python3 -u clear-screen-demo$n.py" --overwrite \
-        "ASCIINEMA/clear-screen-demo$n.cast" >/dev/null 2>&1
+      ~/CONTENT_TOP/Democrt_AI_SE/skills/asciinema-record/scripts/record-tmux-shell.sh \
+        "ASCIINEMA/clear-screen-demo${n}-cmds.txt" \
+        "ASCIINEMA/clear-screen-demo$n.cast" 80 24 45
       agg --font-size 14 --theme asciinema --speed 0.5 --last-frame-duration 3 \
         "ASCIINEMA/clear-screen-demo$n.cast" "ASCIINEMA/clear-screen-demo$n.gif" 2>&1 | tail -1
       python3 ~/CONTENT_TOP/Democrt_AI_SE/skills/asciinema-record/scripts/gif_to_frames.py "ASCIINEMA/clear-screen-demo$n.gif" "ASCIINEMA/clear-screen-demo${n}-frames"
@@ -162,9 +157,9 @@ Or with Python (decode every event):
 
     for n in 1 2 3; do
       timeout 90 python3 "cursor-move-demo$n.py" </dev/null >/dev/null 2>&1
-      asciinema rec --headless --window-size 80x24 --return -q \
-        -c "python3 -u cursor-move-demo$n.py" --overwrite \
-        "ASCIINEMA/cursor-move-demo$n.cast" >/dev/null 2>&1
+      ~/CONTENT_TOP/Democrt_AI_SE/skills/asciinema-record/scripts/record-tmux-shell.sh \
+        "ASCIINEMA/cursor-move-demo${n}-cmds.txt" \
+        "ASCIINEMA/cursor-move-demo$n.cast" 80 24 45
       agg --font-size 14 --theme asciinema --speed 0.5 --last-frame-duration 3 \
         "ASCIINEMA/cursor-move-demo$n.cast" "ASCIINEMA/cursor-move-demo$n.gif" 2>&1 | tail -1
       python3 ~/CONTENT_TOP/Democrt_AI_SE/skills/asciinema-record/scripts/gif_to_frames.py "ASCIINEMA/cursor-move-demo$n.gif" "ASCIINEMA/cursor-move-demo${n}-frames"
@@ -351,9 +346,11 @@ collapsing never produces a confusing "the cursor teleported" frame.
 
 ## Recording rules
 
-- **Use `--headless --window-size 80x24 --return -q`** for asciinema. The
-  recording captures a real PTY-backed session so the cursor block and
-  escape sequences render correctly.
+- **TMUX-ONLY: always use `record-tmux-shell.sh`** — never
+  `asciinema rec -c "python3 -u demo.py"`. The commands file invokes the demo
+  as a command line (`python3 -u clear-screen-demo1.py`), optionally followed
+  by keystrokes. The live shell prompt + typed command + output are captured
+  (Prabhu mandate, 2026-08).
 - **Use `--speed 0.5 --last-frame-duration 3`** for agg. Half-speed gives
   the viewer time to read each state; the 3-second last-frame hold lets the
   final state settle.
@@ -361,12 +358,14 @@ collapsing never produces a confusing "the cursor teleported" frame.
   last info frames stay on screen long enough to read. `PROMPT_HOLD = 3.0`
   for the in-between "sending now" frames. `DEMO_PAUSE = 2.5` for live
   states.
-- **Use `python3 -u` (unbuffered)** when invoking the demo from asciinema
-  so output is captured in real time.
-- **Use `--overwrite`** to allow re-recording.
-- **`-q` is critical** — without it, asciinema's "Recording to ... Press
-  <ctrl+d> to stop" banner leaks into the cast, which is visible in the
-  recording and confuses the info frames.
+- **Use `python3 -u` (unbuffered)** when a commands file invokes a demo
+  script, so output is captured in real time.
+- **Test the demo script smoke-style first** (`timeout 60 python3 -u demo.py </dev/null`),
+  then test the commands file through a shell, before recording. A typo wastes
+  a 45-second recording cycle.
+- **Timeout generously in the commands file flow**: the demo's own holds
+  (`INTRO_HOLD` etc.) add up — set `record-tmux-shell.sh` timeout_secs high
+  enough (45-90) so recording doesn't cut off mid-demo.
 
 ## Frame-collision rules
 
