@@ -16,34 +16,12 @@ References:
 
 import sys
 import os
-import atexit
-import tty
-import termios
+import time
+
+from _clear_common import pause, PROMPT_HOLD, OUTRO_HOLD
 
 ESC = "\x1b"
 CSI = ESC + "["
-
-ORIGINAL_TTY_STATE = None
-
-def save_tty_state():
-    """Save terminal state."""
-    fd = sys.stdin.fileno()
-    return fd, termios.tcgetattr(fd)
-
-def restore_tty():
-    """Restore terminal to original state."""
-    global ORIGINAL_TTY_STATE
-    if ORIGINAL_TTY_STATE:
-        fd, state = ORIGINAL_TTY_STATE
-        termios.tcsetattr(fd, termios.TCSADRAIN, state)
-
-def setup_raw_terminal():
-    """Configure terminal for raw mode."""
-    global ORIGINAL_TTY_STATE
-    fd, state = save_tty_state()
-    ORIGINAL_TTY_STATE = (fd, state)
-    atexit.register(restore_tty)
-    tty.setraw(fd)
 
 def sgr(*params):
     """Send SGR (Select Graphic Rendition) sequence.
@@ -276,29 +254,24 @@ def demo_color_grid():
         print()
 
 def main():
-    global ORIGINAL_TTY_STATE
-
-    ORIGINAL_TTY_STATE = save_tty_state()
-    setup_raw_terminal()
-
     try:
         demo_8_colors()
 
         print()
-        print("Press Enter for 16-color demo...")
-        sys.stdin.readline()
+        print("Next: 16-color demo...")
+        pause(PROMPT_HOLD)
 
         demo_16_colors()
 
         print()
-        print("Press Enter for 256-color demo...")
-        sys.stdin.readline()
+        print("Next: 256-color demo...")
+        pause(PROMPT_HOLD)
 
         demo_256_colors()
 
         print()
-        print("Press Enter for color grid...")
-        sys.stdin.readline()
+        print("Next: color grid...")
+        pause(PROMPT_HOLD)
 
         demo_color_grid()
 
@@ -314,9 +287,9 @@ def main():
         print("  CSI 38 ; 5 ; N m — Set 256-color foreground")
         print("  CSI 48 ; 5 ; N m — Set 256-color background")
         print("  CSI 0 m          — Reset all attributes")
+        pause(OUTRO_HOLD)
 
     except Exception as e:
-        restore_tty()
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
