@@ -49,9 +49,8 @@ The implementer MUST:
 - Use web search to research every technique (escape sequences, double buffering, grid wrapping, frame pacing) before using it
 - Cite source URL, man page section, or spec document for every technique
 - Create a bibliography of all sources in `prep/README.md`
-- Follow the existing `prep/asciinema.md` conventions if the demo is recorded (tmux-based recording, pause-based pacing — no `tty.setraw` + `readline` hangs)
+- Follow the existing `prep/asciinema.md` conventions for demo pacing (pause-based pacing — no `tty.setraw` + `readline` hangs, which break under tmux)
 
 ## Notes
 
-- This is the "put the learnings to use" spec: it exercises 2J/3J/H clearing, cursor control, and full-frame writes — the same primitives the editor will use. Keep the implementation focused and readable; it is also a content subject (an asciinema animation video).
-- The render loop should map to the keyboard-to-display flow from spec 02 (`flow.md`) — output path: program writes bytes → PTY → terminal emulator parses → cells update → pixels.
+- This is the "put the learnings to use" spec: it exercises screen clearing (2J/3J/H), cursor control, and full-frame writes — the same primitives the editor will need. Keep the implementation focused and readable.
