@@ -49,8 +49,8 @@ terminal editor will need:
   implemented, where cells outside the grid read as dead)
   - Wide 40×20 view box (`GRID_COLS = 40`); live cells drawn as `*`
 - Coloured frame via SGR (Select Graphic Rendition): bold bright-cyan
-  header, bright-yellow border, bright-green live cells, bright-magenta
-  footer — all reset with `CSI 0 m`
+  header, bright-yellow border, bold bright-red live cells ("stars"),
+  bright-magenta footer — all reset with `CSI 0 m`
 - Double-buffered simulation: two grid buffers ping-pong; the next
   generation is written into the back buffer and the references swap
 - Double-buffered output: each frame (clear + cursor home + all rows) is

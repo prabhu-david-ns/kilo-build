@@ -110,13 +110,13 @@ def esc_show_cursor():
 # --- SGR colours ------------------------------------------------------
 # SGR (Select Graphic Rendition) is CSI Pn ; Pn ; ... m. We use it to
 # tint the frame: bold bright-cyan header, bright-yellow border,
-# bright-green live cells, bright-magenta footer.
+# bold bright-red live cells (the "stars"), bright-magenta footer.
 # Reference: ECMA-48 § 8.3.117 "SGR"; xterm ctlseqs "SGR — Character
 # Attributes". https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 # (also demonstrated in prep/colors.py, spec 01).
 STYLE_HEADER = CSI + "1;96m"   # bold + bright cyan foreground
 STYLE_BORDER = CSI + "93m"     # bright yellow foreground
-STYLE_LIVE   = CSI + "92m"     # bright green foreground
+STYLE_LIVE   = CSI + "1;31m"   # bold + bright red foreground — the stars
 STYLE_FOOTER = CSI + "95m"     # bright magenta foreground
 STYLE_RESET  = CSI + "0m"      # SGR 0 — reset all attributes to default
 
