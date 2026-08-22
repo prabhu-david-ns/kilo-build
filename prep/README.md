@@ -47,6 +47,10 @@ terminal editor will need:
   `i = row * width + col`, with explicit out-of-bounds handling
   (default: toroidal "wrap" boundary so gliders run forever; "clip" also
   implemented, where cells outside the grid read as dead)
+  - Wide 40×20 view box (`GRID_COLS = 40`); live cells drawn as `*`
+- Coloured frame via SGR (Select Graphic Rendition): bold bright-cyan
+  header, bright-yellow border, bright-green live cells, bright-magenta
+  footer — all reset with `CSI 0 m`
 - Double-buffered simulation: two grid buffers ping-pong; the next
   generation is written into the back buffer and the references swap
 - Double-buffered output: each frame (clear + cursor home + all rows) is
@@ -56,13 +60,18 @@ terminal editor will need:
   of generations or on Ctrl-C, restoring the terminal (DECTCEM cursor
   visibility, screen)
 - Run `python3 prep/game-of-life.py` to watch, or
-  `python3 prep/game-of-life.py --check` to self-verify that the seeded
-  glider reproduces shifted by (1,1) every 4 generations
+  `python3 prep/game-of-life.py --check` to self-verify:
+  - the seeded glider reproduces shifted by (1,1) every 4 generations
+  - edge logic: wrap seam neighbour counting across the torus edges,
+    clip semantics (out-of-bounds reads dead / writes ignored), and a
+    glider straddling the bottom-right seam that wraps correctly
 
 Escape sequences used:
 - `CSI 2 J` / `CSI 3 J` (ED) - clear screen / clear scrollback
 - `CSI H` (CUP) - cursor home
 - `CSI ? 25 l` / `CSI ? 25 h` (DECTCEM) - hide / show cursor
+- `CSI 1 ; 96 m`, `CSI 93 m`, `CSI 92 m`, `CSI 95 m`, `CSI 0 m` (SGR) -
+  header / border / live-cell / footer styling and reset
 
 ## Bibliography
 

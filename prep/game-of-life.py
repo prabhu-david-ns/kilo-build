@@ -46,12 +46,12 @@ CSI = ESC + "["
 
 # --- Tunables ---------------------------------------------------------
 GRID_ROWS = 20
-GRID_COLS = 20
+GRID_COLS = 40            # wide view box: 40 cells across, bordered
 BOUNDARY = "wrap"          # "wrap" (torus) or "clip" (outside of grid = dead)
 FRAME_DELAY = 0.25         # seconds between frames (frame pacing)
 MAX_GENERATIONS = 120
 
-LIVE_CHAR = "#"            # a live cell is drawn as this ASCII char
+LIVE_CHAR = "*"            # a live cell is drawn as this ASCII char
 DEAD_CHAR = " "            # a dead cell is drawn as this ASCII char
 
 # The canonical glider, in (row, col) offsets from its 3x3 bounding box.
@@ -105,6 +105,20 @@ def esc_show_cursor():
     https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
     """
     return CSI + "?25h"
+
+
+# --- SGR colours ------------------------------------------------------
+# SGR (Select Graphic Rendition) is CSI Pn ; Pn ; ... m. We use it to
+# tint the frame: bold bright-cyan header, bright-yellow border,
+# bright-green live cells, bright-magenta footer.
+# Reference: ECMA-48 § 8.3.117 "SGR"; xterm ctlseqs "SGR — Character
+# Attributes". https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+# (also demonstrated in prep/colors.py, spec 01).
+STYLE_HEADER = CSI + "1;96m"   # bold + bright cyan foreground
+STYLE_BORDER = CSI + "93m"     # bright yellow foreground
+STYLE_LIVE   = CSI + "92m"     # bright green foreground
+STYLE_FOOTER = CSI + "95m"     # bright magenta foreground
+STYLE_RESET  = CSI + "0m"      # SGR 0 — reset all attributes to default
 
 
 # --- Grid: 2D coordinates over a 1D linear array ----------------------
@@ -271,24 +285,40 @@ def compose_frame(grid, generation, total, footer):
     parts.append(esc_clear_screen())
     parts.append(esc_cursor_home())
 
+    parts.append(STYLE_HEADER)
     parts.append(
         "Conway's Game of Life  gen %04d/%04d  pop %04d"
         % (generation + 1, total, len(grid.live_cells()))
     )
+    parts.append(STYLE_RESET)
     parts.append("\n")
+    parts.append(STYLE_BORDER)
     parts.append("+" + "-" * grid.cols + "+")
+    parts.append(STYLE_RESET)
     parts.append("\n")
     for r in range(grid.rows):
-        row_chars = ["|"]
+        parts.append(STYLE_BORDER)
+        parts.append("|")
+        parts.append(STYLE_RESET)
         base = r * grid.cols
         for c in range(grid.cols):
-            row_chars.append(LIVE_CHAR if grid.cells[base + c] else DEAD_CHAR)
-        row_chars.append("|")
-        parts.append("".join(row_chars))
+            if grid.cells[base + c]:
+                parts.append(STYLE_LIVE)
+                parts.append(LIVE_CHAR)
+                parts.append(STYLE_RESET)
+            else:
+                parts.append(DEAD_CHAR)
+        parts.append(STYLE_BORDER)
+        parts.append("|")
+        parts.append(STYLE_RESET)
         parts.append("\n")
+    parts.append(STYLE_BORDER)
     parts.append("+" + "-" * grid.cols + "+")
+    parts.append(STYLE_RESET)
     parts.append("\n")
+    parts.append(STYLE_FOOTER)
     parts.append(footer)
+    parts.append(STYLE_RESET)
     return "".join(parts)
 
 
@@ -399,11 +429,82 @@ def verify_glider():
     print("PASS: index mapping + wrap boundary + B3/S23 rules behave correctly.")
 
 
+def verify_edge_logic():
+    """Self-check: out-of-bounds handling under both boundary policies.
+
+    The glider check above runs mid-grid, so it never exercises the
+    boundary paths. These checks push cells across the edges on purpose:
+
+    1. Wrap seam counting — on a torus the top row is adjacent to the
+       bottom row and the left column to the right column, so a corner
+       cell sees neighbours across the seam.
+       Reference: LifeWiki "Bounded grids" / "Torus".
+       https://conwaylife.com/wiki/Bounded_grids
+       https://conwaylife.com/wiki/Torus
+    2. Clip semantics — out-of-bounds reads dead, writes are ignored,
+       and out-of-bounds indices map to None.
+    3. Wrap glider crossing the seam — the seeded glider straddles the
+       bottom-right corner of the 20x40 grid; after 4 generations it
+       must reappear translated by (1,1), modulo the grid size, because
+       a torus is translation-invariant (period 4, c/4).
+       Reference: https://conwaylife.com/wiki/Glider
+    """
+    # 1. Wrap: (0,0) is adjacent to (3,3), (3,0) and (0,3) on a 4x4 torus.
+    w = LifeGrid(4, 4, "wrap")
+    for rc in ((0, 3), (3, 0), (3, 3)):
+        w.set(*rc, 1)
+    n = w.live_neighbors(0, 0)
+    assert n == 3, "wrap seam: expected 3 neighbours for (0,0), got %d" % n
+    assert w.index(-1, -1) == w.index(3, 3), "(-1,-1) must wrap to (3,3)"
+    assert w.index(0, 4) == w.index(0, 0), "(0,4) must wrap to (0,0)"
+
+    # 2. Clip: no neighbours across the seam; out-of-bounds reads dead
+    #    and writes are a no-op.
+    c = LifeGrid(4, 4, "clip")
+    for rc in ((0, 1), (1, 0), (1, 1)):
+        c.set(*rc, 1)
+    assert c.live_neighbors(0, 0) == 3, "clip: (0,0) must see 3 in-grid neighbours"
+    c.set(0, 1, 0)
+    assert c.live_neighbors(0, 0) == 2, "clip: (0,0) must see 2 after one dies"
+    assert c.index(-1, 0) is None, "clip: (-1,0) must be out of bounds"
+    assert c.index(4, 0) is None, "clip: (4,0) must be out of bounds"
+    assert c.get(-1, 0) == 0, "clip: out-of-bounds reads dead"
+    before = c.live_cells()
+    c.set(-1, -1, 1)
+    assert c.live_cells() == before, "clip: out-of-bounds writes must be ignored"
+
+    # 3. Wrap glider straddling the bottom-right seam.
+    grid = LifeGrid(GRID_ROWS, GRID_COLS, BOUNDARY)
+    base_r, base_c = GRID_ROWS - 2, GRID_COLS - 2
+    for dr, dc in GLIDER_OFFSETS:
+        grid.set(base_r + dr, base_c + dc, 1)   # set() normalizes via index()
+    start = grid.live_cells()
+    assert len(start) == 5, "glider at the seam must still have 5 live cells"
+
+    for _ in range(4):
+        grid = next_generation(grid)
+
+    expected = {
+        ((r + 1) % GRID_ROWS, (c + 1) % GRID_COLS) for r, c in start
+    }
+    got = grid.live_cells()
+    if got != expected:
+        print("FAIL: glider did not translate by (1,1) across the seam.")
+        print("expected:", sorted(expected))
+        print("got:     ", sorted(got))
+        sys.exit(1)
+
+    print("PASS: wrap seam counting (corner sees neighbours across the torus).")
+    print("PASS: clip boundary reads out-of-bounds as dead, ignores writes.")
+    print("PASS: glider wraps across the bottom-right seam (translation (1,1)).")
+
+
 # --- Entry point ------------------------------------------------------
 
 def main(argv):
     if "--check" in argv:
         verify_glider()
+        verify_edge_logic()
         return 0
 
     # Animation mode: hide the cursor so it doesn't jump across the redraw,
