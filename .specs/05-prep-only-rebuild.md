@@ -15,6 +15,18 @@ Produce the same terminal text/code editor capability as spec 04 — but derived
 
 **Directory discipline:** work ONLY inside this build directory. Do NOT list or read anything above it (no `..`, no parent repo contents, no explore/ notes). The knowledge budget is `prep/` + `.specs/` + nothing else.
 
+## Workflow (MANDATORY — follow strictly)
+
+**Never plan the whole editor in your head before writing code. Build in small, verified increments.** After the initial `ls`/`README` orientation, do NOT read prep/ files all at once or think for minutes before acting. Instead:
+
+1. Read ONE prep/ file (or one cluster, e.g. the clear-screen demos) immediately before writing the code it informs.
+2. Write or extend code. Run `make` (or the build) right away. Fix errors. Move on.
+3. Never go more than a few tool calls without a build or a visible terminal check.
+4. Use `printf`/`echo`-based terminal checks inside tmux (like the demo scripts do) to verify behavior incrementally; the tmux session must be created before testing raw-mode code, and `tcsetattr`-style errors mean you're testing outside a tty — create the tmux pane FIRST.
+5. It is fine to write the whole editor across many file-append/edit steps. The file does not need to appear in one shot.
+
+A run that spends many minutes reading files or generating without building is FAILING this spec even if the final code is right.
+
 ## Requirements
 
 1. **Build:** a `Makefile` driving `gcc -std=c11 -Wall -Wextra` producing the binary `tedit`, plus `make clean`. No build-system dependencies. (Build tooling is not knowledge — this is allowed as-is.)
