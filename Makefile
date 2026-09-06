@@ -1,13 +1,16 @@
-# tedit — dependency-free VT100 terminal editor in C (spec 04).
-# gcc only, against libc/POSIX. No build-system dependencies.
+CC      := gcc
+CFLAGS  := -std=c11 -Wall -Wextra -g
+TARGET  := tedit
 
-CC      ?= gcc
-CFLAGS  ?= -std=c11 -Wall -Wextra -O2 -g
+$(TARGET): tedit.c
+	$(CC) $(CFLAGS) -o $(TARGET) tedit.c
 
-tedit: tedit.c
-	$(CC) $(CFLAGS) -o $@ tedit.c
+# spec 04 research-derived rebuild — kept alongside the spec 05 prep-only
+# version as its own tree (landed 2026-09-06 merge of impl/04).
+tedit-research: tedit-research/tedit.c
+	$(CC) $(CFLAGS) -o tedit-research/tedit tedit-research/tedit.c
 
 clean:
-	rm -f tedit
+	rm -f $(TARGET) tedit-research/tedit
 
-.PHONY: clean
+.PHONY: clean tedit-research

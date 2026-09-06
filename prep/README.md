@@ -73,6 +73,7 @@ Escape sequences used:
 - `CSI 1 ; 96 m`, `CSI 93 m`, `CSI 92 m`, `CSI 95 m`, `CSI 0 m` (SGR) -
   header / border / live-cell / footer styling and reset
 
+<<<<<<< HEAD
 ### tedit (spec 04 — the real editor)
 
 `../tedit.c` + `../Makefile` is the payoff spec: a dependency-free VT100
@@ -93,6 +94,47 @@ It applies the prep techniques directly:
 
 Keys: type / arrows / Home-End / PageUp-PageDown / Backspace / Delete /
 Enter / Ctrl-S save / Ctrl-F find / Ctrl-Q quit (repeated while dirty).
+
+## Spec 05 sources
+
+Spec 05 rebuilt the editor using **only** this prep/ knowledge — zero external
+research. Every technique in `tedit.c` is derived from and cited against one of
+these files:
+
+- `prep/flow.md` — raw-mode flag set (cfmakeraw list, §3.3), cooked vs raw
+  line discipline (§3.2-3.4), VMIN/VTIME blocking reads (§4.2), key
+  classification table (§5.1-5.4), keyboard→display pipeline (§4-6, §9) that
+  motivates the canonical-bytes vs rendered-columns row model.
+- `prep/key-classifier.py` — printable/Ctrl/ESC classification,
+  `CSI_SEQUENCES`/`SS3_SEQUENCES` tables, `_read_csi_sequence` ECMA-48
+  param/intermediate/final byte parsing.
+- `prep/input-orchestration.py` — NORMAL/ESC/CSI/SS3 input state machine,
+  raw-mode `\r\n` output pattern, Ctrl-S/Ctrl-Q/Ctrl-F action routing that the
+  editor's key processor mirrors.
+- `prep/clear-screen.py` — ED clear-screen `CSI 2J`, CUP `CSI H`, DECAWM
+  auto-wrap toggles `CSI ?7l` / `CSI ?7h`.
+- `prep/cursor-move.py` — CUP absolute positioning `CSI row;col H` used for
+  per-frame cursor placement and the no-trailing-newline frame design.
+- `prep/colors.py` — SGR palette: `CSI 30-37m`, `CSI 40-47m`, `CSI 1;30-37m`,
+  `CSI 38;5;Nm`, `CSI 0m`; source of every colour the editor emits
+  (keywords, types, numbers, strings, comments, matches, status/message bars).
+- `prep/game-of-life.py` — single-write frame composition (`compose_frame`),
+  DECTCEM cursor hide/show `CSI ?25l` / `CSI ?25h`, bold-bright `1;9xm` style
+  form, `cleanup()` restore-on-exit pattern.
+- `prep/viewport.py` — TIOCGWINSZ ioctl size query, DSR `CSI 6n` cursor report
+  and cursor-clamp fallback that motivate the viewport/scroll math.
+- `prep/terminal-info.py` — `os.isatty()` tty detection (the editor refuses to
+  run when stdin is not a terminal), DEC private-mode toggles.
+- `prep/terminal-viewport-combined.py` — consolidated TIOCGWINSZ query and
+  `CSI ?25h/l` / `CSI ?7h/l` private-mode toggles used at startup/exit.
+
+No external URLs, man-page links, or third-party project names appear in
+`tedit.c`; the only sources cited are the files above. Techniques extended
+beyond what prep/ shows directly (for example the per-row `hl` syntax-array,
+multi-line comment state carry, the dirty-quit confirmation, and the
+incremental find state) are marked in `tedit.c` as "designed from prep/
+primitives" and justified against the prep/ behaviours they build on.
+>>>>>>> origin/main
 
 ## Bibliography
 
