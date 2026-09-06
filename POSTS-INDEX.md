@@ -24,8 +24,8 @@ Code links point into this repo (public).
 | G | Your Terminal Is a Game Console (Game of Life) | 2026-08-24..30 | [prep/game-of-life.py](https://github.com/prabhu-david-ns/kilo-build/blob/main/prep/game-of-life.py) | [post](https://www.linkedin.com/posts/prabhu-david-sheryl-b5205019_democrt-conwaysgameoflife-terminals-activity-7498174886973181953-WHO4) |
 | 10 | tedit code walkthrough | date ← Prabhu | [.specs/04-terminal-text-editor-c.md](https://github.com/prabhu-david-ns/kilo-build/blob/main/.specs/04-terminal-text-editor-c.md) | [post](https://www.linkedin.com/posts/prabhu-david-sheryl-b5205019_democrt-cprogramming-terminals-activity-7500349288158420992-DMtV) |
 | 11 | how close we got (build/run vs original) | date ← Prabhu | [.specs/05-prep-only-rebuild.md](https://github.com/prabhu-david-ns/kilo-build/blob/main/.specs/05-prep-only-rebuild.md) | [post](https://www.linkedin.com/posts/prabhu-david-sheryl-b5205019_democrt-cprogramming-terminals-activity-7500711683426762753-1UR3) |
-| 12a | Series close — Part 1: first half of map (posts 1-7 + code + specs) | pending | [prep/ files](https://github.com/prabhu-david-ns/kilo-build/tree/main/prep) | _fill after posting_ |
-| 12b | Series close — Part 2: second half of map (posts 8-12 + code + specs) | pending | [repo root](https://github.com/prabhu-david-ns/kilo-build) | _fill after posting_ |
+| 12a | Series close — Part 1: first half of map (posts 1-7 + code + specs) | ✅ scheduled | [prep/ files](https://github.com/prabhu-david-ns/kilo-build/tree/main/prep) | _fill after posting_ |
+| 12b | Series close — Part 2: second half of map (posts 8-12 + code + specs) | ✅ scheduled | [repo root](https://github.com/prabhu-david-ns/kilo-build) | _fill after posting_ |
 
 **Close-out (2026-09-06):** all 12 pieces published; kilo-build merged: spec 04/05, impl 04 (tedit)
 + impl 05 (byte-identical to 04 — one canonical `tedit.c` kept, provenance in PRs #10/#12),
