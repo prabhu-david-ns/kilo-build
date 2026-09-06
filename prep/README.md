@@ -73,7 +73,6 @@ Escape sequences used:
 - `CSI 1 ; 96 m`, `CSI 93 m`, `CSI 92 m`, `CSI 95 m`, `CSI 0 m` (SGR) -
   header / border / live-cell / footer styling and reset
 
-<<<<<<< HEAD
 ### tedit (spec 04 — the real editor)
 
 `../tedit.c` + `../Makefile` is the payoff spec: a dependency-free VT100
@@ -134,7 +133,6 @@ beyond what prep/ shows directly (for example the per-row `hl` syntax-array,
 multi-line comment state carry, the dirty-quit confirmation, and the
 incremental find state) are marked in `tedit.c` as "designed from prep/
 primitives" and justified against the prep/ behaviours they build on.
->>>>>>> origin/main
 
 ## Bibliography
 
